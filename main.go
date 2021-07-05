@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"reverseGifBot/utils"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -23,25 +23,26 @@ func main() {
 	updates, err := bot.GetUpdatesChan(u)
 
 	for update := range updates {
+		c := make(chan string, 1)
 		if update.Message == nil { // ignore any non-Message Updates
 			continue
 		}
 
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-		mimeType := update.Message.Animation.MimeType
-		// fileName := update.Message.Animation.FileName
-		fmt.Println(mimeType)
-		// switch mimeType {
-		// case "video/mp4":
-		// 	file := utils.Mp4File{fileName}
-		// 	file.Reverse()
-		// case "gif":
-		// 	file := &GifFile{fileName}
-		// 	file.Reverse()
-		// }
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "hello "+update.Message.From.FirstName)
-		msg.ReplyToMessageID = update.Message.MessageID
+		if update.Message.Animation == nil {
+			continue
+		}
 
+		filePath, _ := bot.GetFileDirectURL(update.Message.Animation.FileID)
+
+		// log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+		c <- utils.Reverse(filePath)
+
+		// msg := tgbotapi.NewAnimationUpload(update.Message.Chat.ID, gifFilePath)
+		// msg := tgbotapi.NewMessage(update.Message.Chat.ID, "hello "+update.Message.From.FirstName)
+
+		msg := tgbotapi.NewDocumentUpload(update.Message.Chat.ID, <-c)
+		msg.ReplyToMessageID = update.Message.MessageID
 		bot.Send(msg)
+
 	}
 }

@@ -1,28 +1,31 @@
 package utils
 
-import "fmt"
+import (
+	"fmt"
 
-// ReverseInterface to implement reverse function for various types of files
-type ReverseInterface interface {
-	Reverse()
+	"github.com/hunterlong/gifs"
+)
+
+func Reverse(mp4FilePath string) string {
+
+	gifPath, err := convertToGif(mp4FilePath)
+	if err != nil {
+		fmt.Println(err)
+		// return "", err
+	}
+	// fmt.Println(gifPath)
+	return gifPath
 }
 
-// GifFile structure refers to gif File
-type GifFile struct {
-	fileName string
-}
+func convertToGif(mp4FilePath string) (string, error) {
+	input := &gifs.New{
+		Source: mp4FilePath,
+	}
 
-// Mp4File structure refers to mp4 File
-type Mp4File struct {
-	fileName string
-}
-
-// Reverse is implemented for gif file
-func (f *GifFile) Reverse() {
-	fmt.Println("in gif reverse")
-}
-
-// Reverse is implemented for mp4 file
-func (f *Mp4File) Reverse() {
-	fmt.Println("in mp4 reverse")
+	response, err := input.Create()
+	if err != nil {
+		return "", err
+	}
+	fmt.Println("Gifs.com Gif URL: ", response.Files.Gif)
+	return response.Files.Gif, nil
 }
