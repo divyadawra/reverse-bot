@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"reverseGifBot/utils"
 
@@ -23,26 +24,39 @@ func main() {
 	updates, err := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		c := make(chan string, 1)
+
 		if update.Message == nil { // ignore any non-Message Updates
 			continue
 		}
 
 		if update.Message.Animation == nil {
+			errMsg := tgbotapi.NewMessage(update.Message.Chat.ID, "Hey "+update.Message.From.FirstName+", Send a GIF file")
+			errMsg.ReplyToMessageID = update.Message.MessageID
+			bot.Send(errMsg)
 			continue
 		}
 
-		filePath, _ := bot.GetFileDirectURL(update.Message.Animation.FileID)
+		mp4filePath, _ := bot.GetFileDirectURL(update.Message.Animation.FileID)
 
-		// log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-		c <- utils.Reverse(filePath)
+		utils.Reverse(mp4filePath)
 
-		// msg := tgbotapi.NewAnimationUpload(update.Message.Chat.ID, gifFilePath)
-		// msg := tgbotapi.NewMessage(update.Message.Chat.ID, "hello "+update.Message.From.FirstName)
+		gifBytes, err := ioutil.ReadFile("./files/reversed.gif")
+		if err != nil {
+			panic(err)
+		}
+		photoFileBytes := tgbotapi.FileBytes{
+			Name:  "./files/reversed.gif",
+			Bytes: gifBytes,
+		}
+		msg := tgbotapi.NewAnimationUpload(update.Message.Chat.ID, photoFileBytes)
 
-		msg := tgbotapi.NewDocumentUpload(update.Message.Chat.ID, <-c)
 		msg.ReplyToMessageID = update.Message.MessageID
-		bot.Send(msg)
+
+		resp, err := bot.Send(msg)
+		if err != nil {
+			log.Println("error is -----", err)
+		}
+		log.Println("response is -----", resp)
 
 	}
 }
