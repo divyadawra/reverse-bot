@@ -2,70 +2,59 @@ package utils
 
 import (
 	"fmt"
-	"image/gif"
-	"image/jpeg"
 	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
-
-	"github.com/hunterlong/gifs"
 )
 
 // Reverse a GIF file
 func Reverse(mp4FilePath string) {
 
-	gifPath, err := convertToGif(mp4FilePath)
+	breakIntoImages(mp4FilePath)
+	cmd := exec.Command("goanigiffy", "-src=./reversed-images/*.png", "-dest=./files/reversed.gif", "-delay=25")
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(fmt.Sprint(err) + ": " + string(output))
 	}
-	err = downloadFile("./files/original.gif", gifPath)
-
-	originalGif := &gif.GIF{}
-	reversedGif := &gif.GIF{}
-	fmt.Println("Starting...")
-	f, err := os.Open("./files/original.gif")
-	if err != nil {
-		fmt.Println("Error")
-		return
-	}
-	originalGif, _ = gif.DecodeAll(f)
-
-	images := originalGif.Image
-
-	delay := originalGif.Delay
-	fmt.Println(delay)
-	for i := len(images) - 1; i > 0; i-- {
-		name := strconv.Itoa(i) + ".jpg"
-		file, _ := os.Create(name)
-
-		opt := jpeg.Options{
-			Quality: 100,
-		}
-		err = jpeg.Encode(file, images[i], &opt)
-		reversedGif.Image = append(reversedGif.Image, images[i])
-		reversedGif.Delay = append(reversedGif.Delay, delay[i])
-	}
-
-	f, _ = os.OpenFile("./files/reversed.gif", os.O_WRONLY|os.O_CREATE, 0600)
-	defer f.Close()
-	gif.EncodeAll(f, reversedGif)
-	if err != nil {
-		fmt.Println(err)
-	}
+	fmt.Println(string(output))
 }
 
-// This is time taking TODO: make it fast
-func convertToGif(mp4FilePath string) (string, error) {
-	input := &gifs.New{
-		Source: mp4FilePath,
-	}
-	response, err := input.Create()
+func breakIntoImages(mp4FilePath string) {
+	err := downloadFile("./files/original.mp4", mp4FilePath)
 	if err != nil {
-		return "", err
+		fmt.Println("There is error")
+		fmt.Println(err)
 	}
-	fmt.Println("Gifs.com Gif URL: ", response.Files.Gif)
-	return response.Files.Gif, nil
+	fmt.Println("----here----")
+	os.RemoveAll("./images")
+	os.MkdirAll("./images", 0755)
+	cmd := exec.Command("ffmpeg", "-i", "./files/original.mp4", "-vf", "fps=3", "./images/%01d.png")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(fmt.Sprint(err) + ": " + string(output))
+	}
+	fmt.Println(string(output))
+
+	files, _ := ioutil.ReadDir("./images")
+
+	// Save the images in reversed order in another folder
+	os.RemoveAll("./reversed-images")
+	os.MkdirAll("./reversed-images", 0755)
+	for i := 0; i < len(files); i++ {
+		fileName := strconv.Itoa(len(files)-i) + ".png"
+		data, err := ioutil.ReadFile("./images/" + files[i].Name())
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = ioutil.WriteFile("./reversed-images/"+fileName, data, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 // DownloadFile will download a url to a local file. It's efficient because it will
