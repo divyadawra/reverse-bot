@@ -15,7 +15,7 @@ import (
 func Reverse(mp4FilePath string) {
 
 	breakIntoImages(mp4FilePath)
-	cmd := exec.Command("goanigiffy", "-src=./reversed-images/*.png", "-dest=./files/reversed.gif", "-delay=25")
+	cmd := exec.Command("goanigiffy", "-src=./reversed-images/*.png", "-dest=./files/reversed.gif", "-delay=30")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(fmt.Sprint(err) + ": " + string(output))
@@ -32,7 +32,9 @@ func breakIntoImages(mp4FilePath string) {
 	fmt.Println("----here----")
 	os.RemoveAll("./images")
 	os.MkdirAll("./images", 0755)
-	cmd := exec.Command("ffmpeg", "-i", "./files/original.mp4", "-vf", "fps=3", "./images/%01d.png")
+
+	cmd := exec.Command("ffmpeg", "-i", "./files/original.mp4", "-vf", "fps=6", "./images/%03d.png")
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(fmt.Sprint(err) + ": " + string(output))
