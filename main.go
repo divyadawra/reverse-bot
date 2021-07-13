@@ -30,7 +30,7 @@ func main() {
 		}
 
 		if update.Message.Animation == nil {
-			errMsg := tgbotapi.NewMessage(update.Message.Chat.ID, "Hey "+update.Message.From.FirstName+", Send a GIF file")
+			errMsg := tgbotapi.NewMessage(update.Message.Chat.ID, "Hey "+ update.Message.From.FirstName+", Send a GIF file")
 			errMsg.ReplyToMessageID = update.Message.MessageID
 			bot.Send(errMsg)
 			continue
@@ -40,12 +40,12 @@ func main() {
 
 		utils.Reverse(mp4filePath)
 
-		gifBytes, err := ioutil.ReadFile("./files/reversed.gif")
+		gifBytes, err := ioutil.ReadFile("./files/reversed.mp4")
 		if err != nil {
 			panic(err)
 		}
 		photoFileBytes := tgbotapi.FileBytes{
-			Name:  "./files/reversed.gif",
+			Name:  "./files/reversed.mp4",
 			Bytes: gifBytes,
 		}
 		msg := tgbotapi.NewAnimationUpload(update.Message.Chat.ID, photoFileBytes)
